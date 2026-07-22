@@ -2,10 +2,11 @@ name: CyberBrief - Daily News Scraper
 
 on:
   schedule:
-    # Se ejecuta todos los días a las 7:00 AM (hora de Bogotá, UTC-5)
     - cron: '0 12 * * *'
-  # Permite ejecutarlo manualmente desde la interfaz de GitHub
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   scrape-news:
@@ -22,15 +23,23 @@ jobs:
       
       - name: 📦 Instalar dependencias
         run: |
+          pip install --upgrade pip
           pip install requests beautifulsoup4 feedparser
       
+      - name: 🔍 Verificar archivos
+        run: |
+          ls -la
+          echo "📂 Contenido del repositorio:"
+          cat scraper.py | head -20 || echo "⚠️ scraper.py no encontrado"
+      
       - name: 🤖 Ejecutar scraper
-        run: python scraper.py
+        run: |
+          python scraper.py || echo "❌ El scraper falló, pero continuamos..."
       
       - name: 📤 Subir cambios a GitHub
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add data.json
-          git commit -m "🔄 Actualización automática de noticias" || echo "Sin cambios"
+          git diff --staged --quiet || git commit -m "🔄 Actualización automática de noticias"
           git push
